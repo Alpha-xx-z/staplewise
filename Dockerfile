@@ -1,18 +1,12 @@
-# 1. Build frontend
-FROM node:18 AS frontend
+# Simple single-stage build
+FROM node:18
 WORKDIR /app
-COPY ./src ./src
-COPY ./public ./public
-COPY package.json vite.config.ts tsconfig.json tailwind.config.js ./
-RUN npm install
-RUN npm run build
 
-# 2. Backend + frontend static
-FROM node:18 AS backend
-WORKDIR /app
+# Copy all files
 COPY . .
+
+# Install dependencies
 RUN npm install
-COPY --from=frontend /app/dist ./dist
 
 # Create logs directory
 RUN mkdir -p logs

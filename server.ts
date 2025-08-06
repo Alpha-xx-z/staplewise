@@ -38,7 +38,9 @@ const emailTransporter = nodemailer.createTransport({
 
 // Email template for password reset
 const createPasswordResetEmail = (userName: string, resetToken: string) => {
-  const resetUrl = `http://localhost:5173/reset-password?token=${resetToken}`;
+  const resetUrl = process.env.NODE_ENV === 'production' 
+    ? `https://staplewise.vercel.app/reset-password?token=${resetToken}`
+    : `http://localhost:5174/reset-password?token=${resetToken}`;
   
   return {
     subject: 'Password Reset Request - StapleWise',
@@ -133,7 +135,16 @@ initializeBuckets();
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: true, // Allow all origins in development
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:5174',
+    'https://staplewise.vercel.app',
+    'https://staplewise-git-main-staplewise.vercel.app',
+    'https://staplewise-staplewise.vercel.app',
+    /\.vercel\.app$/, // Allow all Vercel subdomains
+    /\.vercel\.app$/  // Allow all Vercel domains
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'user-id']
