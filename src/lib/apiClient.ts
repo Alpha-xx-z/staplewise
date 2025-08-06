@@ -1,6 +1,6 @@
 // API client for frontend to communicate with backend
 export class ApiClient {
-  private static baseUrl = import.meta.env.VITE_API_URL || 'http://31.97.229.127/api';
+  private static baseUrl = import.meta.env.VITE_API_URL || 'https://srv943180.hstgr.cloud/api';
 
   static async login(email: string, password: string) {
     const response = await fetch(`${this.baseUrl}/auth/login`, {

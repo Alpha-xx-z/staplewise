@@ -8,6 +8,8 @@ COPY . .
 # Install dependencies
 RUN npm install
 
+# Generate Prisma client for Linux
+RUN npx prisma generate
 # Create logs directory
 RUN mkdir -p logs
 

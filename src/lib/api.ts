@@ -1,7 +1,7 @@
 import { QueryType, QueryStatus, OrderStatus, Role } from '@prisma/client';
 
 export class ProductService {
-  private static baseUrl = import.meta.env.VITE_API_URL || 'http://31.97.229.127/api';
+  private static baseUrl = import.meta.env.VITE_API_URL || 'https://srv943180.hstgr.cloud/api';
 
   static async getAllProducts(filters?: {
     grade?: string;
@@ -71,7 +71,7 @@ export class ProductService {
 }
 
 export class QueryService {
-  private static baseUrl = import.meta.env.VITE_API_URL || 'http://31.97.229.127/api';
+  private static baseUrl = import.meta.env.VITE_API_URL || 'https://srv943180.hstgr.cloud/api';
 
   static async createQuery(data: {
     type: QueryType;
@@ -151,7 +151,7 @@ export class QueryService {
 }
 
 export class OrderService {
-  private static baseUrl = import.meta.env.VITE_API_URL || 'http://31.97.229.127/api';
+  private static baseUrl = import.meta.env.VITE_API_URL || 'https://srv943180.hstgr.cloud/api';
 
   static async createOrder(data: {
     orderNumber: string;
@@ -217,7 +217,7 @@ export class OrderService {
 }
 
 export class AdminService {
-  private static baseUrl = import.meta.env.VITE_API_URL || 'http://31.97.229.127/api';
+  private static baseUrl = import.meta.env.VITE_API_URL || 'https://srv943180.hstgr.cloud/api';
 
   static async getDashboardStats() {
     try {
