@@ -23,10 +23,16 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: [
-        '.prisma/client/index-browser',
-        '@prisma/client'
-      ]
+      external: ['@prisma/client', '.prisma/client/index-browser']
+    }
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false
+      }
     }
   }
 });

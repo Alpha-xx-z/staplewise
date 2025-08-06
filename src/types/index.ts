@@ -42,7 +42,6 @@ export interface Product {
   grade: string;
   pricePerKg: number;
   location: string;
-  stock: number;
   image: string;
   specifications: string;
   deliveryTime: string;
@@ -75,6 +74,8 @@ export interface CompanyDetails {
   registrarName: string;
   gstin: string;
   yearEstablished: number;
+  phone: string;
+  email: string;
 }
 
 export interface Order {

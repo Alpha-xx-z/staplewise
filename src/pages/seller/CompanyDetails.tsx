@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, Building, MapPin, Calendar, FileText } from 'lucide-react';
 import { CompanyDetails as CompanyDetailsType } from '../../types';
+import { ApiClient } from '../../lib/apiClient';
 
 const CompanyDetails: React.FC = () => {
   const [companyDetails, setCompanyDetails] = useState<CompanyDetailsType>({
@@ -14,13 +15,34 @@ const CompanyDetails: React.FC = () => {
     },
     registrarName: '',
     gstin: '',
-    yearEstablished: new Date().getFullYear()
+    yearEstablished: new Date().getFullYear(),
+    phone: '',
+    email: ''
   });
 
   const [isEditing, setIsEditing] = useState(true);
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  // Load existing company details on component mount
+  useEffect(() => {
+    const loadCompanyDetails = async () => {
+      try {
+        const response = await ApiClient.getCompanyDetails();
+        if (response.success && response.companyDetails) {
+          setCompanyDetails(response.companyDetails);
+          setIsEditing(false);
+        }
+      } catch (error) {
+        console.log('No existing company details found');
+      }
+    };
+
+    loadCompanyDetails();
+  }, []);
 
   // Indian cities for validation
   const indianCities = [
@@ -199,34 +221,82 @@ const CompanyDetails: React.FC = () => {
   const validateForm = () => {
     const errors: {[key: string]: string} = {};
     
-    // Validate city
-    if (companyDetails.city && !indianCities.includes(companyDetails.city)) {
+    // Validate required fields
+    if (!companyDetails.name.trim()) {
+      errors.name = 'Company name is required';
+    }
+    
+    if (!companyDetails.city.trim()) {
+      errors.city = 'City is required';
+    } else if (!indianCities.includes(companyDetails.city)) {
       errors.city = 'Please select a valid Indian city';
     }
     
-    // Validate pincode
-    if (companyDetails.address.pincode && !/^\d{6}$/.test(companyDetails.address.pincode)) {
+    if (!companyDetails.address.street1.trim()) {
+      errors['address.street1'] = 'Street address is required';
+    }
+    
+    if (!companyDetails.address.pincode.trim()) {
+      errors['address.pincode'] = 'Pincode is required';
+    } else if (!/^\d{6}$/.test(companyDetails.address.pincode)) {
       errors['address.pincode'] = 'Please enter a valid 6-digit pincode';
     }
     
-    // Validate GSTIN
-    if (companyDetails.gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(companyDetails.gstin)) {
+    if (!companyDetails.address.state.trim()) {
+      errors['address.state'] = 'State is required';
+    }
+    
+    if (!companyDetails.registrarName.trim()) {
+      errors.registrarName = 'Registrar name is required';
+    }
+    
+    if (!companyDetails.gstin.trim()) {
+      errors.gstin = 'GSTIN is required';
+    } else if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(companyDetails.gstin)) {
       errors.gstin = 'Please enter a valid GSTIN format';
+    }
+    
+    if (!companyDetails.yearEstablished) {
+      errors.yearEstablished = 'Year of establishment is required';
+    }
+    
+    if (!companyDetails.phone.trim()) {
+      errors.phone = 'Phone number is required';
+    } else if (!/^[6-9]\d{9}$/.test(companyDetails.phone)) {
+      errors.phone = 'Please enter a valid 10-digit Indian mobile number';
+    }
+    
+    if (!companyDetails.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(companyDetails.email)) {
+      errors.email = 'Please enter a valid email address';
     }
     
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
     
-    console.log('Company details saved:', companyDetails);
-    setIsEditing(false);
-    alert('Company details saved successfully!');
+    setIsLoading(true);
+    setSaveError('');
+    
+    try {
+      const response = await ApiClient.saveCompanyDetails(companyDetails);
+      if (response.success) {
+        setIsEditing(false);
+        alert('Company details saved successfully!');
+      }
+    } catch (error: any) {
+      setSaveError(error.message || 'Failed to save company details');
+      console.error('Save error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const indianStates = [
@@ -286,6 +356,11 @@ const CompanyDetails: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-2xl shadow-soft p-8">
+        {saveError && (
+          <div className="mb-6 p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">
+            {saveError}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Company Identity */}
           <div>
@@ -306,9 +381,14 @@ const CompanyDetails: React.FC = () => {
                   onChange={handleInputChange}
                   required
                   disabled={!isEditing}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100 ${
+                    validationErrors.name ? 'border-red-300' : 'border-gray-300'
+                  }`}
                   placeholder="Enter your company name"
                 />
+                {validationErrors.name && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.name}</p>
+                )}
               </div>
               
               <div>
@@ -349,6 +429,49 @@ const CompanyDetails: React.FC = () => {
                   )}
                 </div>
               </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={companyDetails.phone}
+                  onChange={handleInputChange}
+                  required
+                  disabled={!isEditing}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100 ${
+                    validationErrors.phone ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="10-digit mobile number"
+                  maxLength={10}
+                />
+                {validationErrors.phone && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.phone}</p>
+                )}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={companyDetails.email}
+                  onChange={handleInputChange}
+                  required
+                  disabled={!isEditing}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100 ${
+                    validationErrors.email ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="company@example.com"
+                />
+                {validationErrors.email && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -371,9 +494,14 @@ const CompanyDetails: React.FC = () => {
                   onChange={handleInputChange}
                   required
                   disabled={!isEditing}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100 ${
+                    validationErrors['address.street1'] ? 'border-red-300' : 'border-gray-300'
+                  }`}
                   placeholder="Building number, street name"
                 />
+                {validationErrors['address.street1'] && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors['address.street1']}</p>
+                )}
               </div>
               
               <div>
@@ -425,17 +553,16 @@ const CompanyDetails: React.FC = () => {
                     required
                     disabled={!isEditing}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100 ${
-                      validationErrors.gstin ? 'border-red-300' : 'border-gray-300'
+                      validationErrors['address.state'] ? 'border-red-300' : 'border-gray-300'
                     }`}
                   >
                     <option value="">Select State</option>
                     {indianStates.map(state => (
                       <option key={state} value={state}>{state}</option>
                     ))}
-                    maxLength={15}
                   </select>
-                  {validationErrors.gstin && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.gstin}</p>
+                  {validationErrors['address.state'] && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors['address.state']}</p>
                   )}
                 </div>
               </div>
@@ -461,9 +588,14 @@ const CompanyDetails: React.FC = () => {
                   onChange={handleInputChange}
                   required
                   disabled={!isEditing}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100 ${
+                    validationErrors.registrarName ? 'border-red-300' : 'border-gray-300'
+                  }`}
                   placeholder="Name of the registrar"
                 />
+                {validationErrors.registrarName && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.registrarName}</p>
+                )}
               </div>
               
               <div>
@@ -477,9 +609,14 @@ const CompanyDetails: React.FC = () => {
                   onChange={handleInputChange}
                   required
                   disabled={!isEditing}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100 ${
+                    validationErrors.gstin ? 'border-red-300' : 'border-gray-300'
+                  }`}
                   placeholder="15-digit GST number"
                 />
+                {validationErrors.gstin && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.gstin}</p>
+                )}
               </div>
               
               <div className="md:col-span-2">
@@ -495,8 +632,13 @@ const CompanyDetails: React.FC = () => {
                   min="1900"
                   max={new Date().getFullYear()}
                   disabled={!isEditing}
-                  className="w-full md:w-1/3 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100"
+                  className={`w-full md:w-1/3 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors disabled:bg-gray-100 ${
+                    validationErrors.yearEstablished ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 />
+                {validationErrors.yearEstablished && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.yearEstablished}</p>
+                )}
               </div>
             </div>
           </div>
@@ -512,10 +654,20 @@ const CompanyDetails: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-accent transition-colors flex items-center"
+                disabled={isLoading}
+                className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-accent transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Save className="w-4 h-4 mr-2" />
-                Save Details
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Details
+                  </>
+                )}
               </button>
             </div>
           )}

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Package, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { mockProducts } from '../data/mockData';
+import { ArrowLeft, MapPin, Package, MessageCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import FloatingPopup from '../components/common/FloatingPopup';
-import OAuthLoginModal from '../components/common/OAuthLoginModal';
+import LoginModal from '../components/common/OAuthLoginModal';
 import { useAuth } from '../contexts/AuthContext';
+import { ProductService } from '../lib/api';
 
 const ProductDetail: React.FC = () => {
   const { user } = useAuth();
@@ -13,8 +13,40 @@ const ProductDetail: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const product = mockProducts.find(p => p.id === id);
+  // Fetch product details
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        const products = await ProductService.getAllProducts();
+        const foundProduct = products.find((p: any) => p.id === id);
+        setProduct(foundProduct || null);
+      } catch (error) {
+        console.error('Error fetching product:', error);
+        setProduct(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Loading product details...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -29,13 +61,36 @@ const ProductDetail: React.FC = () => {
     );
   }
 
-  // Multiple images for each product
-  const productImages = [
-    product.image,
-    'https://images.pexels.com/photos/1295572/pexels-photo-1295572.jpeg?auto=compress&cs=tinysrgb&w=800',
-    'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg?auto=compress&cs=tinysrgb&w=800',
-    'https://images.pexels.com/photos/1295572/pexels-photo-1295572.jpeg?auto=compress&cs=tinysrgb&w=600'
-  ];
+  // Get all images for the product
+  const getProductImages = () => {
+    const images = [];
+    
+    // Add primary image
+    if (product.primaryImage) {
+      images.push(product.primaryImage);
+    }
+    
+    // Add additional images if they exist
+    if (product.additionalImages) {
+      try {
+        const additionalImages = JSON.parse(product.additionalImages);
+        if (Array.isArray(additionalImages)) {
+          images.push(...additionalImages);
+        }
+      } catch (error) {
+        console.error('Error parsing additional images:', error);
+      }
+    }
+    
+    // If no images found, use a placeholder
+    if (images.length === 0) {
+      images.push('https://images.pexels.com/photos/1295572/pexels-photo-1295572.jpeg?auto=compress&cs=tinysrgb&w=800');
+    }
+    
+    return images;
+  };
+
+  const productImages = getProductImages();
 
   const nextImage = () => {
     setSelectedImageIndex((prev) => (prev + 1) % productImages.length);
@@ -140,16 +195,10 @@ const ProductDetail: React.FC = () => {
                   <Package className="w-5 h-5 text-primary" />
                   <div>
                     <p className="text-sm text-gray-500">Available Stock</p>
-                    <p className="font-semibold">{product.stock} tonnes</p>
+                    <p className="font-semibold">{product.stock} kg</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-5 h-5 text-primary" />
-                  <div>
-                    <p className="text-sm text-gray-500">Delivery Time</p>
-                    <p className="font-semibold">{product.deliveryTime}</p>
-                  </div>
-                </div>
+
                 <div className="flex items-center space-x-2">
                   <MapPin className="w-5 h-5 text-primary" />
                   <div>
@@ -159,10 +208,22 @@ const ProductDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Specifications */}
+              {/* Specifications & Grade */}
+              {product.specificationsAndGrade && (
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold font-playfair text-primary mb-4">
+                    Specifications & Grade
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {product.specificationsAndGrade}
+                  </p>
+                </div>
+              )}
+
+              {/* Basic Specifications */}
               <div className="mb-8">
                 <h3 className="text-xl font-bold font-playfair text-primary mb-4">
-                  Specifications & Grade
+                  Basic Specifications
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
                   {product.specifications}
@@ -198,32 +259,38 @@ const ProductDetail: React.FC = () => {
         {/* Additional Information */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Quality Assurance */}
-          <div className="bg-white rounded-2xl shadow-soft p-8">
-            <h3 className="text-xl font-bold font-playfair text-primary mb-4">
-              Quality Assurance
-            </h3>
-            <ul className="space-y-2 text-gray-600">
-              <li>• Premium grade cashew kernels</li>
-              <li>• Strictly quality controlled processing</li>
-              <li>• FSSAI certified facilities</li>
-              <li>• Moisture content: 5% max</li>
-              <li>• Broken kernels: Less than 5%</li>
-            </ul>
-          </div>
+          {product.qualityAssurance && (
+            <div className="bg-white rounded-2xl shadow-soft p-8">
+              <h3 className="text-xl font-bold font-playfair text-primary mb-4">
+                Quality Assurance
+              </h3>
+              <div className="space-y-2 text-gray-600">
+                {product.qualityAssurance.split('\n').map((point: string, index: number) => (
+                  <div key={index} className="flex items-start">
+                    <span className="text-primary mr-2">•</span>
+                    <span>{point.trim()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Packaging & Delivery */}
-          <div className="bg-white rounded-2xl shadow-soft p-8">
-            <h3 className="text-xl font-bold font-playfair text-primary mb-4">
-              Packaging & Delivery
-            </h3>
-            <ul className="space-y-2 text-gray-600">
-              <li>• Food-grade packaging materials</li>
-              <li>• Vacuum sealed for freshness</li>
-              <li>• Secure logistics network</li>
-              <li>• Real-time tracking available</li>
-              <li>• Insurance coverage included</li>
-            </ul>
-          </div>
+          {product.packagingAndDelivery && (
+            <div className="bg-white rounded-2xl shadow-soft p-8">
+              <h3 className="text-xl font-bold font-playfair text-primary mb-4">
+                Packaging & Delivery
+              </h3>
+              <div className="space-y-2 text-gray-600">
+                {product.packagingAndDelivery.split('\n').map((point: string, index: number) => (
+                  <div key={index} className="flex items-start">
+                    <span className="text-primary mr-2">•</span>
+                    <span>{point.trim()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -236,9 +303,9 @@ const ProductDetail: React.FC = () => {
         />
       )}
       
-      {/* OAuth Login Modal */}
+      {/* Login Modal */}
       {showLoginModal && (
-        <OAuthLoginModal
+        <LoginModal
           onClose={() => setShowLoginModal(false)}
           onSuccess={() => {
             setShowLoginModal(false);

@@ -98,7 +98,7 @@ const SalesDashboard: React.FC = () => {
                         {query.type}
                       </span>
                     </td>
-                    <td className="py-3 px-4">{query.quantity} tonnes</td>
+                    <td className="py-3 px-4">{query.quantity} kg</td>
                     <td className="py-3 px-4">
                       <div>
                         <p className="text-sm">{query.email}</p>
@@ -197,7 +197,7 @@ const SalesDashboard: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Quantity</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedQuery.quantity} tonnes</p>
+                    <p className="mt-1 text-sm text-gray-900">{selectedQuery.quantity} kg</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Product ID</label>

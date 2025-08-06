@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Complete Prisma Schema for Company Details with MinIO Integration
+// This is a separate schema file - do not push to database yet
 
 generator client {
   provider = "prisma-client-js"
@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -18,129 +18,238 @@ model User {
   phone       String
   role        Role     @default(BUYER)
   companyName String?
-  gst         String?
+  city        String?
+  street1     String?
+  street2     String?
+  pincode     String?
+  state       String?
+  registrarName String?
+  gstin       String?
+  yearEstablished Int?
+  isActive    Boolean  @default(true)
+  isVerified  Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  buyQueries  Query[] @relation("BuyerQueries")
-  sellQueries Query[] @relation("SellerQueries")
-  assignedQueries Query[] @relation("AssignedQueries")
-  products    Product[]
-  orders      Order[]
-  companyDetails CompanyDetails?
+  products       Product[]
+  orders         Order[]
+  queries        Query[]
+  documents      Document[]
 
   @@map("users")
 }
 
-model CompanyDetails {
-  id              String @id @default(cuid())
-  userId          String @unique
-  name            String
-  location        String
-  street1         String
-  street2         String?
-  pincode         String
-  state           String
-  registrarName   String
-  gstin           String
-  yearEstablished Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+model Address {
+  id                    String   @id @default(cuid())
+  
+  // Address Components
+  buildingNumber        String?
+  buildingName          String?
+  streetAddress1        String
+  streetAddress2        String?
+  landmark              String?
+  area                  String?
+  city                  String
+  district              String?
+  state                 String
+  pincode               String
+  country               String   @default("India")
+  
+  // Coordinates (optional)
+  latitude              Float?
+  longitude             Float?
+  
+  // Address Type
+  addressType           AddressType @default(BUSINESS)
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // removed: registeredCompany     CompanyDetails? @relation("RegisteredAddress")
+  // removed: operationalCompany    CompanyDetails? @relation("OperationalAddress")
 
-  @@map("company_details")
+  @@map("addresses")
+}
+
+model Document {
+  id                    String   @id @default(cuid())
+  userId                String
+  
+  // Document Information
+  documentType          DocumentType
+  documentName          String
+  documentNumber        String?
+  
+  // MinIO Storage
+  fileUrl               String   // MinIO URL
+  fileName              String
+  fileSize              Int      // Size in bytes
+  mimeType              String
+  
+  // Document Status
+  isVerified            Boolean  @default(false)
+  verificationStatus    VerificationStatus @default(PENDING)
+  verificationNotes     String?
+  
+  // Timestamps
+  uploadedAt            DateTime @default(now())
+  verifiedAt            DateTime?
+  expiryDate            DateTime?
+  
+  // Relations
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // removed: companyDetails        CompanyDetails? @relation(fields: [companyDetailsId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
 }
 
 model Product {
-  id            String   @id @default(cuid())
-  name          String
-  grade         String
-  pricePerKg    Float
-  location      String
-  stock         Int
-  image         String
-  specifications String
-  deliveryTime  String
-  minimumOrderQuantity Int @default(1)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  sellerId              String
+  
+  // Product Information
+  name                  String
+  category              ProductCategory
+  grade                 String
+  description           String?
+  specifications        String
+  
+  // New Fields
+  specificationsAndGrade String?  // Small description for specifications & grade
+  qualityAssurance      String?   // Up to 5 points for quality assurance
+  packagingAndDelivery  String?   // Up to 5 points for packaging & delivery
+  
+  // Pricing and Inventory
+  pricePerKg            Float
+  minimumOrderQuantity  Int      @default(1)
+  unit                  String   @default("KG")
+  
+  // Location and Delivery
+  location              String
+  deliveryTime          String
+  packagingType         String?
+  
+  // Images (MinIO URLs)
+  primaryImage          String
+  additionalImages      String?  // JSON string of MinIO URLs array for up to 4 additional images
+  
+  // Product Status
+  isActive              Boolean  @default(true)
+  isVerified            Boolean  @default(false)
+  verificationStatus    VerificationStatus @default(PENDING)
+  
+  // SEO and Search
+  slug                  String?  @unique
+  tags                  String?  // JSON string of tags array for search optimization
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   // Relations
-  sellerId String
-  seller   User   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  queries  Query[]
-  orderItems OrderItem[]
+  seller                User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  queries               Query[]
+  orderItems            OrderItem[]
 
   @@map("products")
 }
 
 model Query {
-  id          String      @id @default(cuid())
-  type        QueryType
-  quantity    Int
-  companyName String
-  pincode     String
-  email       String
-  phone       String
-  gst         String?
-  status      QueryStatus @default(PENDING)
-  notes       String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                    String   @id @default(cuid())
+  
+  // Query Information
+  type                  QueryType
+  quantity              Int
+  message               String?
+  
+  // Contact Information
+  companyName           String
+  contactName           String
+  email                 String
+  phone                 String
+  pincode               String
+  gst                   String?
+  
+  // Query Status
+  status                QueryStatus @default(PENDING)
+  priority              Priority    @default(MEDIUM)
+  
+  // Assignment
+  assignedToId          String?
+  assignedAt            DateTime?
+  
+  // Response
+  response              String?
+  responseAt            DateTime?
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   // Relations
-  productId   String
-  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId             String
+  product               Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   
-  buyerId     String?
-  buyer       User?   @relation("BuyerQueries", fields: [buyerId], references: [id])
-  
-  sellerId    String?
-  seller      User?   @relation("SellerQueries", fields: [sellerId], references: [id])
-  
-  assignedToId String?
-  assignedTo   User?   @relation("AssignedQueries", fields: [assignedToId], references: [id])
+  userId                String?
+  user                  User?    @relation(fields: [userId], references: [id])
 
   @@map("queries")
 }
 
 model Order {
-  id          String      @id @default(cuid())
-  orderNumber String      @unique
-  totalAmount Float
-  status      OrderStatus @default(PENDING)
-  notes       String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                    String   @id @default(cuid())
+  orderNumber           String   @unique
+  
+  // Order Information
+  totalAmount           Float
+  totalQuantity         Int
+  currency              String   @default("INR")
+  
+  // Order Status
+  status                OrderStatus @default(PENDING)
+  paymentStatus         PaymentStatus @default(PENDING)
+  
+  // Shipping Information
+  shippingAddress       String
+  billingAddress        String?
+  trackingNumber        String?
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  shippedAt             DateTime?
+  deliveredAt           DateTime?
 
   // Relations
-  buyerId String
-  buyer   User   @relation(fields: [buyerId], references: [id], onDelete: Cascade)
-  items   OrderItem[]
+  buyerId               String
+  buyer                 User     @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  items                 OrderItem[]
 
   @@map("orders")
 }
 
 model OrderItem {
-  id       String @id @default(cuid())
-  quantity Int
-  pricePerKg Float
-  totalPrice Float
-
-  // Relations
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id                    String   @id @default(cuid())
   
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // Item Information
+  quantity              Int
+  pricePerKg            Float
+  totalPrice            Float
+  
+  // Relations
+  orderId               String
+  order                 Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId             String
+  product               Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("order_items")
 }
 
+// Enums
 enum Role {
   ADMIN
   SALES
@@ -148,23 +257,114 @@ enum Role {
   SELLER
 }
 
+enum CompanyType {
+  SOLE_PROPRIETORSHIP
+  PARTNERSHIP
+  PRIVATE_LIMITED
+  PUBLIC_LIMITED
+  LLP
+  OPC
+  SECTION_8
+  COOPERATIVE
+}
+
+enum AddressType {
+  BUSINESS
+  RESIDENTIAL
+  WAREHOUSE
+  FACTORY
+}
+
+enum DocumentType {
+  // Company Documents
+  GST_CERTIFICATE
+  PAN_CARD
+  INCORPORATION_CERTIFICATE
+  MOA_AOA
+  UDYAM_CERTIFICATE
+  IEC_CERTIFICATE
+  
+  // Identity Documents
+  AADHAR_CARD
+  PASSPORT
+  DRIVING_LICENSE
+  VOTER_ID
+  
+  // Business Documents
+  BANK_STATEMENT
+  CANCELLED_CHEQUE
+  TRADE_LICENSE
+  FSSAI_LICENSE
+  ISO_CERTIFICATE
+  
+  // Product Documents
+  PRODUCT_CERTIFICATE
+  QUALITY_CERTIFICATE
+  LAB_REPORT
+  
+  // Other
+  OTHER
+}
+
+enum ProductCategory {
+  CASHEWS
+  CLOVES
+  CHILLIES
+  STAR_ANISE
+  PEPPER
+  CINNAMON
+  OTHER_SPICES
+}
+
 enum QueryType {
   BUY
   SELL
+  GENERAL_INQUIRY
+  BULK_ORDER
+  CUSTOM_REQUIREMENT
 }
 
 enum QueryStatus {
   PENDING
   ASSIGNED
+  IN_PROGRESS
   COMPLETED
   REJECTED
+  CANCELLED
 }
 
 enum OrderStatus {
   PENDING
   CONFIRMED
   PROCESSING
+  PACKED
   SHIPPED
+  OUT_FOR_DELIVERY
   DELIVERED
   CANCELLED
+  RETURNED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_PAID
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  REQUIRES_RESUBMISSION
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }

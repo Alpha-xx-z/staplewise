@@ -1,5 +1,4 @@
-import { prisma } from './prisma';
-import { Product, Query, Order, QueryType, QueryStatus, OrderStatus, Role } from '@prisma/client';
+import { QueryType, QueryStatus, OrderStatus, Role } from '@prisma/client';
 
 export class ProductService {
   static async getAllProducts(filters?: {
@@ -9,139 +8,95 @@ export class ProductService {
     stockAvailable?: boolean;
     search?: string;
   }) {
-    const where: any = {
-      isActive: true,
-    };
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (filters?.grade) params.append('grade', filters.grade);
+      if (filters?.location) params.append('location', filters.location);
+      if (filters?.priceRange) params.append('priceRange', filters.priceRange);
+      if (filters?.stockAvailable) params.append('stockAvailable', 'true');
+      if (filters?.search) params.append('search', filters.search);
 
-    if (filters?.grade) {
-      where.grade = filters.grade;
-    }
-
-    if (filters?.location) {
-      where.location = filters.location;
-    }
-
-    if (filters?.stockAvailable) {
-      where.stock = { gt: 0 };
-    }
-
-    if (filters?.search) {
-      where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
-        { specifications: { contains: filters.search, mode: 'insensitive' } },
-      ];
-    }
-
-    if (filters?.priceRange) {
-      const [min, max] = filters.priceRange.split('-').map(Number);
-      if (max) {
-        where.pricePerKg = { gte: min, lte: max };
-      } else {
-        where.pricePerKg = { gte: min };
+      const response = await fetch(`/api/products?${params.toString()}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch products');
       }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      throw error;
     }
-
-    return prisma.product.findMany({
-      where,
-      include: {
-        seller: {
-          select: {
-            id: true,
-            name: true,
-            companyName: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
   }
 
   static async getProductById(id: string) {
-    return prisma.product.findUnique({
-      where: { id },
-      include: {
-        seller: {
-          select: {
-            id: true,
-            name: true,
-            companyName: true,
-            phone: true,
-            email: true,
-          },
-        },
-      },
-    });
+    try {
+      const response = await fetch(`/api/products/${id}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch product');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      throw error;
+    }
   }
 
-  static async createProduct(sellerId: string, data: {
-    name: string;
-    grade: string;
-    pricePerKg: number;
-    location: string;
-    stock: number;
-    image: string;
-    specifications: string;
-    deliveryTime: string;
-    minimumOrderQuantity: number;
-  }) {
-    return prisma.product.create({
-      data: {
-        ...data,
-        sellerId,
-      },
-    });
-  }
-
-  static async updateProduct(id: string, sellerId: string, data: Partial<Product>) {
-    return prisma.product.update({
-      where: {
-        id,
-        sellerId, // Ensure only the seller can update their product
-      },
-      data,
-    });
-  }
-
-  static async deleteProduct(id: string, sellerId: string) {
-    return prisma.product.delete({
-      where: {
-        id,
-        sellerId, // Ensure only the seller can delete their product
-      },
-    });
-  }
-
-  static async getProductsBySeller(sellerId: string) {
-    return prisma.product.findMany({
-      where: { sellerId },
-      orderBy: { createdAt: 'desc' },
-    });
+  static async createProduct(data: any) {
+    try {
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create product');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating product:', error);
+      throw error;
+    }
   }
 }
 
 export class QueryService {
   static async createQuery(data: {
     type: QueryType;
-    productId: string;
     quantity: number;
     companyName: string;
     pincode: string;
     email: string;
     phone: string;
     gst?: string;
-    buyerId?: string;
-    sellerId?: string;
+    productId: string;
+    userId?: string;
   }) {
-    return prisma.query.create({
-      data,
-      include: {
-        product: true,
-        buyer: true,
-        seller: true,
-      },
-    });
+    try {
+      const response = await fetch('/api/queries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create query');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating query:', error);
+      throw error;
+    }
   }
 
   static async getAllQueries(filters?: {
@@ -149,159 +104,347 @@ export class QueryService {
     type?: QueryType;
     assignedToId?: string;
   }) {
-    const where: any = {};
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.type) params.append('type', filters.type);
+      if (filters?.assignedToId) params.append('assignedToId', filters.assignedToId);
 
-    if (filters?.status) {
-      where.status = filters.status;
+      const response = await fetch(`/api/admin/queries?${params.toString()}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch queries');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching queries:', error);
+      throw error;
     }
-
-    if (filters?.type) {
-      where.type = filters.type;
-    }
-
-    if (filters?.assignedToId) {
-      where.assignedToId = filters.assignedToId;
-    }
-
-    return prisma.query.findMany({
-      where,
-      include: {
-        product: true,
-        buyer: true,
-        seller: true,
-        assignedTo: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
   }
 
   static async updateQueryStatus(id: string, status: QueryStatus, assignedToId?: string) {
-    return prisma.query.update({
-      where: { id },
-      data: {
-        status,
-        assignedToId,
-      },
-    });
-  }
-
-  static async deleteQuery(id: string) {
-    return prisma.query.delete({
-      where: { id },
-    });
+    try {
+      const response = await fetch(`/api/admin/queries/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, assignedToId }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update query status');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating query status:', error);
+      throw error;
+    }
   }
 }
 
 export class OrderService {
-  static async createOrder(buyerId: string, items: Array<{
-    productId: string;
-    quantity: number;
-    pricePerKg: number;
-  }>) {
-    const totalAmount = items.reduce((sum, item) => sum + (item.quantity * item.pricePerKg), 0);
-    const orderNumber = `ORD-${Date.now()}`;
-
-    return prisma.order.create({
-      data: {
-        orderNumber,
-        buyerId,
-        totalAmount,
-        items: {
-          create: items.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            pricePerKg: item.pricePerKg,
-            totalPrice: item.quantity * item.pricePerKg,
-          })),
-        },
-      },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
-        buyer: true,
-      },
-    });
+  static async createOrder(data: {
+    orderNumber: string;
+    totalAmount: number;
+    buyerId: string;
+    items: Array<{
+      productId: string;
+      quantity: number;
+      pricePerKg: number;
+      totalPrice: number;
+    }>;
+  }) {
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create order');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating order:', error);
+      throw error;
+    }
   }
 
   static async getOrdersByBuyer(buyerId: string) {
-    return prisma.order.findMany({
-      where: { buyerId },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    try {
+      const response = await fetch(`/api/orders/buyer/${buyerId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch buyer orders');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching buyer orders:', error);
+      throw error;
+    }
   }
 
   static async getOrdersBySeller(sellerId: string) {
-    return prisma.order.findMany({
-      where: {
-        items: {
-          some: {
-            product: {
-              sellerId,
-            },
-          },
-        },
-      },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
-        buyer: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-  }
-
-  static async updateOrderStatus(id: string, status: OrderStatus) {
-    return prisma.order.update({
-      where: { id },
-      data: { status },
-    });
+    try {
+      const response = await fetch(`/api/orders/seller/${sellerId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch seller orders');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching seller orders:', error);
+      throw error;
+    }
   }
 }
 
-export class CompanyService {
-  static async createOrUpdateCompanyDetails(userId: string, data: {
-    name: string;
-    location: string;
-    street1: string;
-    street2?: string;
-    pincode: string;
-    state: string;
-    registrarName: string;
-    gstin: string;
-    yearEstablished: number;
-  }) {
-    return prisma.companyDetails.upsert({
-      where: { userId },
-      update: data,
-      create: {
-        ...data,
-        userId,
-      },
-    });
+export class AdminService {
+  static async getDashboardStats() {
+    try {
+      const response = await fetch('/api/admin/dashboard-stats');
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard stats');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
   }
 
-  static async getCompanyDetails(userId: string) {
-    return prisma.companyDetails.findUnique({
-      where: { userId },
-    });
+  static async getQueries(filters?: { status?: string; type?: string; assignedToId?: string; }) {
+    try {
+      const params = new URLSearchParams();
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.type) params.append('type', filters.type);
+      if (filters?.assignedToId) params.append('assignedToId', filters.assignedToId);
+
+      const response = await fetch(`/api/admin/queries?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch queries');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching queries:', error);
+      throw error;
+    }
+  }
+
+  static async getUsers() {
+    try {
+      const response = await fetch('/api/admin/users');
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  }
+
+  static async getOrders() {
+    try {
+      const response = await fetch('/api/admin/orders');
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      throw error;
+    }
+  }
+
+  static async createOrder(orderData: any) {
+    try {
+      const response = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create order');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating order:', error);
+      throw error;
+    }
+  }
+
+  static async getSellers() {
+    try {
+      const response = await fetch('/api/admin/sellers');
+      if (!response.ok) {
+        throw new Error('Failed to fetch sellers');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching sellers:', error);
+      throw error;
+    }
+  }
+
+  static async createSalesEmployee(data: {
+    name: string;
+    email: string;
+    password: string;
+    phone: string;
+    companyName?: string;
+  }) {
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...data,
+          role: 'SALES'
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create sales employee');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating sales employee:', error);
+      throw error;
+    }
+  }
+
+  static async deleteUser(userId: string) {
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
+  }
+
+  static async assignQuery(queryId: string, assignedToId: string, status?: string) {
+    try {
+      const response = await fetch(`/api/admin/queries/${queryId}/assign`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          assignedToId,
+          status: status || 'ASSIGNED'
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to assign query');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error assigning query:', error);
+      throw error;
+    }
+  }
+
+  static async updateQueryStatus(queryId: string, status: string) {
+    try {
+      const response = await fetch(`/api/admin/queries/${queryId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update query status');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating query status:', error);
+      throw error;
+    }
+  }
+
+  static async createQueryFromFrontend(data: {
+    type: string;
+    quantity: number;
+    contactName: string;
+    companyName: string;
+    pincode: string;
+    email: string;
+    phone: string;
+    gst?: string;
+    productId: string;
+    userId?: string;
+  }) {
+    try {
+      const response = await fetch('/api/queries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create query');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating query:', error);
+      throw error;
+    }
+  }
+
+  static async deleteQuery(queryId: string) {
+    try {
+      const response = await fetch(`/api/admin/queries/${queryId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete query');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting query:', error);
+      throw error;
+    }
   }
 }

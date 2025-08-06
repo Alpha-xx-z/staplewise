@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Filter, Search, X } from 'lucide-react';
-import { mockProducts, cashewGrades } from '../data/mockData';
+import { MapPin, Filter, Search, X, Loader2 } from 'lucide-react';
+import { cashewGrades } from '../data/mockData';
 import FloatingPopup from '../components/common/FloatingPopup';
-import OAuthLoginModal from '../components/common/OAuthLoginModal';
+import LoginModal from '../components/common/OAuthLoginModal';
 import { useAuth } from '../contexts/AuthContext';
+import { ProductService } from '../lib/api';
 
 const Products: React.FC = () => {
   const { user } = useAuth();
@@ -12,24 +13,44 @@ const Products: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     grade: '',
     location: '',
     priceRange: '',
-    stockAvailable: false
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name'); // Default sort by name
 
   const grades = cashewGrades;
-  const locations = [...new Set(mockProducts.map(p => p.location))];
 
-  const filteredProducts = mockProducts.filter(product => {
+  // Fetch products on component mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const data = await ProductService.getAllProducts();
+        setProducts(data);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const locations = [...new Set(products.map(p => p.location))];
+
+  const filteredProducts = products.filter(product => {
     return (
+      product.category === 'CASHEWS' &&
       (filters.grade === '' || product.grade === filters.grade) &&
       (filters.location === '' || product.location === filters.location) &&
-      (searchTerm === '' || product.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (!filters.stockAvailable || product.stock > 0)
+      (searchTerm === '' || product.name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }).sort((a, b) => {
     switch (sortBy) {
@@ -37,10 +58,6 @@ const Products: React.FC = () => {
         return a.pricePerKg - b.pricePerKg;
       case 'price-high':
         return b.pricePerKg - a.pricePerKg;
-      case 'stock-high':
-        return b.stock - a.stock;
-      case 'stock-low':
-        return a.stock - b.stock;
       case 'location':
         return a.location.localeCompare(b.location);
       case 'grade':
@@ -66,7 +83,6 @@ const Products: React.FC = () => {
       grade: '',
       location: '',
       priceRange: '',
-      stockAvailable: false
     });
     setSearchTerm('');
     setSortBy('name');
@@ -77,7 +93,6 @@ const Products: React.FC = () => {
     if (filters.grade) count++;
     if (filters.location) count++;
     if (filters.priceRange) count++;
-    if (filters.stockAvailable) count++;
     if (searchTerm) count++;
     if (sortBy !== 'name') count++;
     return count;
@@ -120,8 +135,6 @@ const Products: React.FC = () => {
               <option value="name">Sort by Name</option>
               <option value="price-low">Price: Low to High</option>
               <option value="price-high">Price: High to Low</option>
-              <option value="stock-high">Stock: High to Low</option>
-              <option value="stock-low">Stock: Low to High</option>
               <option value="location">Location A-Z</option>
               <option value="grade">Grade A-Z</option>
             </select>
@@ -142,76 +155,76 @@ const Products: React.FC = () => {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-          {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-xl shadow-soft hover:shadow-soft-lg transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
-              <div className="w-full h-48 overflow-hidden relative">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="absolute inset-0 w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-                />
-              </div>
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-2 sm:mb-3">
-                  <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs sm:text-sm font-semibold">
-                    {product.grade}
-                  </span>
-                  <div className="flex items-center text-gray-500 text-xs sm:text-sm">
-                    <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                    {product.location}
-                  </div>
-                </div>
-                
-                <h3 className="text-base sm:text-lg md:text-xl font-bold font-playfair text-primary mb-2 line-clamp-2">
-                  {product.name}
-                </h3>
-                
-                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-2">
-                  {product.specifications}
-                </p>
-                
-                <div className="flex justify-between items-center mb-3 sm:mb-4">
-                  <div>
-                    <span className="text-lg sm:text-xl md:text-2xl font-bold text-accent">
-                      ₹{product.pricePerKg.toLocaleString()}
-                    </span>
-                    <span className="text-xs sm:text-sm text-gray-500 ml-1">per kg</span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center mb-3 sm:mb-4">
-                  <span className="text-xs sm:text-sm text-gray-600">
-                    Stock: {product.stock} tonnes
-                  </span>
-                  <span className="text-xs sm:text-sm text-gray-600">
-                    Delivery: {product.deliveryTime}
-                  </span>
-                </div>
-                
-                <div className="flex space-x-2 text-sm">
-                  <Link
-                    to={`/products/${product.id}`}
-                    className="flex-1 bg-secondary text-primary px-3 py-2 rounded-lg font-medium text-center hover:bg-secondary/80 transition-colors"
-                  >
-                    View Details
-                  </Link>
-                  <button
-                    onClick={() => handleBuyClick(product.id)}
-                    className="flex-1 bg-primary text-white px-3 py-2 rounded-lg font-medium hover:bg-accent transition-colors"
-                  >
-                    Buy Now
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {filteredProducts.length === 0 && (
+        {loading ? (
           <div className="text-center py-12">
-            <p className="text-lg text-gray-500">No products found matching your criteria.</p>
+            <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+            <p className="text-gray-500">Loading products...</p>
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              {filteredProducts.map((product) => (
+                <div key={product.id} className="bg-white rounded-xl shadow-soft hover:shadow-soft-lg transition-all duration-300 transform hover:-translate-y-1 overflow-hidden flex flex-col">
+                  <div className="w-full h-48 overflow-hidden relative">
+                    <img
+                      src={product.primaryImage || product.image}
+                      alt={product.name}
+                      className="absolute inset-0 w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="p-4 sm:p-6 flex flex-col flex-1">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
+                        {product.grade}
+                      </span>
+                      <div className="flex items-center text-gray-500 text-xs sm:text-sm">
+                        <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                        {product.location}
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-base sm:text-lg md:text-xl font-bold font-playfair text-primary mb-2 line-clamp-2">
+                      {product.name}
+                    </h3>
+                    
+                    <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-2">
+                      {product.specifications}
+                    </p>
+                    
+                    <div className="flex justify-between items-center mb-3 sm:mb-4">
+                      <div>
+                        <span className="text-lg sm:text-xl md:text-2xl font-bold text-accent">
+                          ₹{product.pricePerKg.toLocaleString()}
+                        </span>
+                        <span className="text-xs sm:text-sm text-gray-500 ml-1">per kg</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-2 text-sm mt-auto">
+                      <Link
+                        to={`/products/${product.id}`}
+                        className="flex-1 bg-secondary text-primary px-3 py-2 rounded-lg font-medium text-center hover:bg-secondary/80 transition-colors"
+                      >
+                        View Details
+                      </Link>
+                      <button
+                        onClick={() => handleBuyClick(product.id)}
+                        className="flex-1 bg-primary text-white px-3 py-2 rounded-lg font-medium hover:bg-accent transition-colors"
+                      >
+                        Buy Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {filteredProducts.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-lg text-gray-500">No products found matching your criteria.</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -284,19 +297,6 @@ const Products: React.FC = () => {
                     <option value="95000+">Above ₹95,000</option>
                   </select>
                 </div>
-
-                {/* Stock Filter */}
-                <div>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={filters.stockAvailable}
-                      onChange={(e) => setFilters(prev => ({ ...prev, stockAvailable: e.target.checked }))}
-                      className="w-4 h-4 text-primary focus:ring-primary rounded"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Show only products in stock</span>
-                  </label>
-                </div>
               </div>
 
               {/* Modal Actions */}
@@ -325,12 +325,13 @@ const Products: React.FC = () => {
           type="buy"
           productId={selectedProductId}
           onClose={() => setShowBuyForm(false)}
+          category="CASHEWS"
         />
       )}
 
-      {/* OAuth Login Modal */}
+      {/* Login Modal */}
       {showLoginModal && (
-        <OAuthLoginModal
+        <LoginModal
           onClose={() => setShowLoginModal(false)}
           onSuccess={() => {
             setShowLoginModal(false);

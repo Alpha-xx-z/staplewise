@@ -24,7 +24,6 @@ export const mockProducts: Product[] = [
     grade: 'W320',
     pricePerKg: 85,
     location: 'Mangalore',
-    stock: 50,
     image: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg?auto=compress&cs=tinysrgb&w=400',
     specifications: 'Premium quality W320 grade cashew kernels, 100% natural, 320 pieces per pound',
     deliveryTime: '3-5 business days'
@@ -35,7 +34,6 @@ export const mockProducts: Product[] = [
     grade: 'W180',
     pricePerKg: 95,
     location: 'Panruti',
-    stock: 25,
     image: 'https://images.pexels.com/photos/1630588/pexels-photo-1630588.jpeg?auto=compress&cs=tinysrgb&w=400',
     specifications: 'Premium quality W180 grade cashew kernels, 180 pieces per pound',
     deliveryTime: '2-4 business days'
@@ -46,7 +44,6 @@ export const mockProducts: Product[] = [
     grade: 'LWP',
     pricePerKg: 75,
     location: 'Mumbai',
-    stock: 100,
     image: 'https://images.pexels.com/photos/4110256/pexels-photo-4110256.jpeg?auto=compress&cs=tinysrgb&w=400',
     specifications: 'Large White Pieces - Broken cashew kernels, excellent for processing',
     deliveryTime: '1-3 business days'
@@ -57,7 +54,6 @@ export const mockProducts: Product[] = [
     grade: 'SWP',
     pricePerKg: 70,
     location: 'Kollam',
-    stock: 75,
     image: 'https://images.pexels.com/photos/4198020/pexels-photo-4198020.jpeg?auto=compress&cs=tinysrgb&w=400',
     specifications: 'Small White Pieces - Broken cashew kernels, ideal for bakery use',
     deliveryTime: '2-4 business days'
@@ -68,7 +64,6 @@ export const mockProducts: Product[] = [
     grade: 'W240',
     pricePerKg: 88,
     location: 'Goa',
-    stock: 40,
     image: 'https://images.pexels.com/photos/4110257/pexels-photo-4110257.jpeg?auto=compress&cs=tinysrgb&w=400',
     specifications: 'Premium quality W240 grade cashew kernels, 240 pieces per pound',
     deliveryTime: '3-5 business days'
@@ -79,7 +74,6 @@ export const mockProducts: Product[] = [
     grade: 'A180',
     pricePerKg: 98,
     location: 'Kochi',
-    stock: 20,
     image: 'https://images.pexels.com/photos/4198021/pexels-photo-4198021.jpeg?auto=compress&cs=tinysrgb&w=400',
     specifications: 'Super premium A180 grade cashew kernels, largest size available',
     deliveryTime: '2-3 business days'
@@ -90,7 +84,6 @@ export const mockProducts: Product[] = [
     grade: 'BB0',
     pricePerKg: 65,
     location: 'Vizag',
-    stock: 80,
     image: 'https://images.pexels.com/photos/4110258/pexels-photo-4110258.jpeg?auto=compress&cs=tinysrgb&w=400',
     specifications: 'Baby Bits - Small broken pieces, perfect for confectionery',
     deliveryTime: '4-6 business days'
@@ -101,7 +94,6 @@ export const mockProducts: Product[] = [
     grade: 'JH0',
     pricePerKg: 72,
     location: 'Cuddalore',
-    stock: 60,
     image: 'https://images.pexels.com/photos/4198022/pexels-photo-4198022.jpeg?auto=compress&cs=tinysrgb&w=400',
     specifications: 'JH Grade - High quality broken kernels for industrial use',
     deliveryTime: '3-4 business days'
@@ -112,7 +104,6 @@ export const mockProducts: Product[] = [
     grade: 'W400',
     pricePerKg: 78,
     location: 'Pondicherry',
-    stock: 35,
     image: 'https://images.pexels.com/photos/4110259/pexels-photo-4110259.jpeg?auto=compress&cs=tinysrgb&w=400',
     specifications: 'W400 grade cashew kernels, 400 pieces per pound',
     deliveryTime: '2-4 business days'
@@ -123,7 +114,6 @@ export const mockProducts: Product[] = [
     grade: 'SSW(WW320)',
     pricePerKg: 82,
     location: 'Mangalore',
-    stock: 45,
     image: 'https://images.pexels.com/photos/4198023/pexels-photo-4198023.jpeg?auto=compress&cs=tinysrgb&w=400',
     specifications: 'Scorched Slightly Wholes - Premium quality with slight scorching',
     deliveryTime: '3-5 business days'

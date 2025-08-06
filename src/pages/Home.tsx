@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield, Truck, CheckCircle, MapPin, Users, Package, TrendingUp, Search, ShoppingCart, CreditCard, Zap } from 'lucide-react';
 import FloatingPopup from '../components/common/FloatingPopup';
-import OAuthLoginModal from '../components/common/OAuthLoginModal';
+import LoginModal from '../components/common/OAuthLoginModal';
 import { useAuth } from '../contexts/AuthContext';
 
 const Home: React.FC = () => {
@@ -223,7 +223,6 @@ const Home: React.FC = () => {
                 Explore Products
               </button>
               <button
-                onClick={() => setShowSellForm(true)}
                 onClick={() => {
                   if (!user) {
                     window.location.href = '/register';
@@ -241,22 +240,22 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Floating Stats - Now positioned between hero and next section */}
-      <div className="relative -mt-8 lg:-mt-16 px-4 sm:px-6 lg:px-8 z-10 mb-12 lg:mb-20 animate-slide-up">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-soft p-6 sm:p-8 md:p-10 hover:shadow-soft-lg transition-all duration-300">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 relative z-10">
+      {/* Floating Stats - Responsive positioning */}
+      <div className="relative mt-8 sm:mt-8 lg:-mt-16 px-4 sm:px-6 lg:px-8 z-10 mb-8 sm:mb-12 lg:mb-20 animate-slide-up">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-white rounded-xl lg:rounded-2xl shadow-soft p-4 sm:p-6 lg:p-10 hover:shadow-soft-lg transition-all duration-300">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-8 relative z-10">
               {stats.map((stat, index) => (
                 <div key={index} className="text-center">
-                  <div className="flex justify-center mb-3 sm:mb-4">
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                      <stat.icon className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+                  <div className="flex justify-center mb-2 sm:mb-3 lg:mb-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                      <stat.icon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-8 lg:h-8 text-primary" />
                     </div>
                   </div>
-                  <div className="text-lg sm:text-2xl md:text-3xl font-bold text-primary font-playfair mb-1 sm:mb-2">
+                  <div className="text-base sm:text-xl lg:text-3xl font-bold text-primary font-playfair mb-1 sm:mb-2">
                     {stat.value}
                   </div>
-                  <div className="text-xs sm:text-sm text-gray-600">
+                  <div className="text-xs sm:text-sm lg:text-base text-gray-600">
                     {stat.label}
                   </div>
                 </div>
@@ -466,18 +465,20 @@ const Home: React.FC = () => {
         <FloatingPopup
           type="buy"
           onClose={() => setShowBuyForm(false)}
+          category="CASHEWS"
         />
       )}
       {showSellForm && (
         <FloatingPopup
           type="sell"
           onClose={() => setShowSellForm(false)}
+          category="CASHEWS"
         />
       )}
 
-      {/* OAuth Login Modal */}
+      {/* Login Modal */}
       {showLoginModal && (
-        <OAuthLoginModal
+        <LoginModal
           onClose={() => setShowLoginModal(false)}
           onSuccess={() => {
             setShowLoginModal(false);

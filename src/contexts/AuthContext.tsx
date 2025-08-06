@@ -1,20 +1,31 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { AuthService, AuthUser } from '../lib/auth';
-import { Role } from '../types';
+import { ApiClient } from '../lib/apiClient';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+  role: 'ADMIN' | 'SALES' | 'BUYER' | 'SELLER';
+  companyName?: string;
+  gst?: string;
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  name: string;
+  phone: string;
+  role: 'ADMIN' | 'SALES' | 'BUYER' | 'SELLER';
+  companyName?: string;
+  gst?: string;
+}
 
 interface AuthContextType {
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (userData: { 
-    email: string; 
-    password: string; 
-    name: string; 
-    phone: string; 
-    role: Role; 
-    companyName?: string; 
-    gst?: string; 
-  }) => Promise<boolean>;
+  register: (userData: RegisterData) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,7 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const { user: authUser, token } = await AuthService.login(email, password);
+      const { user: authUser, token } = await ApiClient.login(email, password);
       setUser(authUser);
       localStorage.setItem('stapleWiseUser', JSON.stringify(authUser));
       localStorage.setItem('stapleWiseToken', token);
@@ -50,23 +61,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('stapleWiseUser');
     localStorage.removeItem('stapleWiseToken');
   };
 
-  const register = async (userData: { 
-    email: string; 
-    password: string; 
-    name: string; 
-    phone: string; 
-    role: Role; 
-    companyName?: string; 
-    gst?: string; 
-  }): Promise<boolean> => {
+  const register = async (userData: RegisterData): Promise<boolean> => {
     try {
-      const { user: authUser, token } = await AuthService.register(userData);
+      const { user: authUser, token } = await ApiClient.register(userData);
       setUser(authUser);
       localStorage.setItem('stapleWiseUser', JSON.stringify(authUser));
       localStorage.setItem('stapleWiseToken', token);
