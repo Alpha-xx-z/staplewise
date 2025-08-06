@@ -1,6 +1,8 @@
 import { QueryType, QueryStatus, OrderStatus, Role } from '@prisma/client';
 
 export class ProductService {
+  private static baseUrl = import.meta.env.VITE_API_URL || 'http://31.97.229.127/api';
+
   static async getAllProducts(filters?: {
     grade?: string;
     location?: string;
@@ -17,7 +19,7 @@ export class ProductService {
       if (filters?.stockAvailable) params.append('stockAvailable', 'true');
       if (filters?.search) params.append('search', filters.search);
 
-      const response = await fetch(`/api/products?${params.toString()}`);
+      const response = await fetch(`${this.baseUrl}/products?${params.toString()}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -33,7 +35,7 @@ export class ProductService {
 
   static async getProductById(id: string) {
     try {
-      const response = await fetch(`/api/products/${id}`);
+      const response = await fetch(`${this.baseUrl}/products/${id}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -49,7 +51,7 @@ export class ProductService {
 
   static async createProduct(data: any) {
     try {
-      const response = await fetch('/api/products', {
+      const response = await fetch(`${this.baseUrl}/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -69,6 +71,8 @@ export class ProductService {
 }
 
 export class QueryService {
+  private static baseUrl = import.meta.env.VITE_API_URL || 'http://31.97.229.127/api';
+
   static async createQuery(data: {
     type: QueryType;
     quantity: number;
@@ -81,7 +85,7 @@ export class QueryService {
     userId?: string;
   }) {
     try {
-      const response = await fetch('/api/queries', {
+      const response = await fetch(`${this.baseUrl}/queries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -111,7 +115,7 @@ export class QueryService {
       if (filters?.type) params.append('type', filters.type);
       if (filters?.assignedToId) params.append('assignedToId', filters.assignedToId);
 
-      const response = await fetch(`/api/admin/queries?${params.toString()}`);
+      const response = await fetch(`${this.baseUrl}/admin/queries?${params.toString()}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -127,7 +131,7 @@ export class QueryService {
 
   static async updateQueryStatus(id: string, status: QueryStatus, assignedToId?: string) {
     try {
-      const response = await fetch(`/api/admin/queries/${id}/status`, {
+      const response = await fetch(`${this.baseUrl}/admin/queries/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, assignedToId }),
@@ -147,6 +151,8 @@ export class QueryService {
 }
 
 export class OrderService {
+  private static baseUrl = import.meta.env.VITE_API_URL || 'http://31.97.229.127/api';
+
   static async createOrder(data: {
     orderNumber: string;
     totalAmount: number;
@@ -159,7 +165,7 @@ export class OrderService {
     }>;
   }) {
     try {
-      const response = await fetch('/api/orders', {
+      const response = await fetch(`${this.baseUrl}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -179,7 +185,7 @@ export class OrderService {
 
   static async getOrdersByBuyer(buyerId: string) {
     try {
-      const response = await fetch(`/api/orders/buyer/${buyerId}`);
+      const response = await fetch(`${this.baseUrl}/orders/buyer/${buyerId}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -195,7 +201,7 @@ export class OrderService {
 
   static async getOrdersBySeller(sellerId: string) {
     try {
-      const response = await fetch(`/api/orders/seller/${sellerId}`);
+      const response = await fetch(`${this.baseUrl}/orders/seller/${sellerId}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -211,9 +217,11 @@ export class OrderService {
 }
 
 export class AdminService {
+  private static baseUrl = import.meta.env.VITE_API_URL || 'http://31.97.229.127/api';
+
   static async getDashboardStats() {
     try {
-      const response = await fetch('/api/admin/dashboard-stats');
+      const response = await fetch(`${this.baseUrl}/admin/dashboard-stats`);
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard stats');
       }
@@ -231,7 +239,7 @@ export class AdminService {
       if (filters?.type) params.append('type', filters.type);
       if (filters?.assignedToId) params.append('assignedToId', filters.assignedToId);
 
-      const response = await fetch(`/api/admin/queries?${params}`);
+      const response = await fetch(`${this.baseUrl}/admin/queries?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch queries');
       }
@@ -244,7 +252,7 @@ export class AdminService {
 
   static async getUsers() {
     try {
-      const response = await fetch('/api/admin/users');
+      const response = await fetch(`${this.baseUrl}/admin/users`);
       if (!response.ok) {
         throw new Error('Failed to fetch users');
       }
@@ -257,7 +265,7 @@ export class AdminService {
 
   static async getOrders() {
     try {
-      const response = await fetch('/api/admin/orders');
+      const response = await fetch(`${this.baseUrl}/admin/orders`);
       if (!response.ok) {
         throw new Error('Failed to fetch orders');
       }
@@ -270,7 +278,7 @@ export class AdminService {
 
   static async createOrder(orderData: any) {
     try {
-      const response = await fetch('/api/admin/orders', {
+      const response = await fetch(`${this.baseUrl}/admin/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -292,7 +300,7 @@ export class AdminService {
 
   static async getSellers() {
     try {
-      const response = await fetch('/api/admin/sellers');
+      const response = await fetch(`${this.baseUrl}/admin/sellers`);
       if (!response.ok) {
         throw new Error('Failed to fetch sellers');
       }
@@ -311,7 +319,7 @@ export class AdminService {
     companyName?: string;
   }) {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${this.baseUrl}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -336,7 +344,7 @@ export class AdminService {
 
   static async deleteUser(userId: string) {
     try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetch(`${this.baseUrl}/admin/users/${userId}`, {
         method: 'DELETE',
       });
       
@@ -352,7 +360,7 @@ export class AdminService {
 
   static async assignQuery(queryId: string, assignedToId: string, status?: string) {
     try {
-      const response = await fetch(`/api/admin/queries/${queryId}/assign`, {
+      const response = await fetch(`${this.baseUrl}/admin/queries/${queryId}/assign`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -377,7 +385,7 @@ export class AdminService {
 
   static async updateQueryStatus(queryId: string, status: string) {
     try {
-      const response = await fetch(`/api/admin/queries/${queryId}/status`, {
+      const response = await fetch(`${this.baseUrl}/admin/queries/${queryId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -410,7 +418,7 @@ export class AdminService {
     userId?: string;
   }) {
     try {
-      const response = await fetch('/api/queries', {
+      const response = await fetch(`${this.baseUrl}/queries`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -432,7 +440,7 @@ export class AdminService {
 
   static async deleteQuery(queryId: string) {
     try {
-      const response = await fetch(`/api/admin/queries/${queryId}`, {
+      const response = await fetch(`${this.baseUrl}/admin/queries/${queryId}`, {
         method: 'DELETE',
       });
       
