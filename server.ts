@@ -27,6 +27,23 @@ const minioClient = new Client({
   secretKey: process.env.MINIO_SECRET_KEY || '',
 });
 
+// URL transformation function to convert HTTP URLs to HTTPS
+function transformImageUrl(url: string): string {
+  if (!url) return url;
+  
+  // Convert old HTTP MinIO URLs to HTTPS
+  if (url.includes('http://31.97.229.127:9000')) {
+    return url.replace('http://31.97.229.127:9000', 'https://srv943180.hstgr.cloud/minio-api');
+  }
+  
+  // Convert any other HTTP URLs to HTTPS if they're from your domain
+  if (url.startsWith('http://') && url.includes('31.97.229.127')) {
+    return url.replace('http://', 'https://').replace('31.97.229.127', 'srv943180.hstgr.cloud');
+  }
+  
+  return url;
+}
+
 // Initialize email transporter
 const emailTransporter = nodemailer.createTransport({
   service: 'gmail',
@@ -512,7 +529,15 @@ app.get('/api/products', async (req, res) => {
       }
     });
     
-    res.json(products);
+    // Transform image URLs from HTTP to HTTPS
+    const transformedProducts = products.map(product => ({
+      ...product,
+      primaryImage: transformImageUrl(product.primaryImage),
+      additionalImages: product.additionalImages ? 
+        JSON.parse(product.additionalImages).map(transformImageUrl) : []
+    }));
+    
+    res.json(transformedProducts);
   } catch (error) {
     console.error('Products fetch error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -540,7 +565,15 @@ app.get('/api/products/:id', async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    res.json(product);
+    // Transform image URLs from HTTP to HTTPS
+    const transformedProduct = {
+      ...product,
+      primaryImage: transformImageUrl(product.primaryImage),
+      additionalImages: product.additionalImages ? 
+        JSON.parse(product.additionalImages).map(transformImageUrl) : []
+    };
+
+    res.json(transformedProduct);
   } catch (error) {
     console.error('Product fetch error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -944,7 +977,15 @@ app.get('/api/seller/products', async (req, res) => {
       },
     });
     
-    res.json(products);
+    // Transform image URLs from HTTP to HTTPS
+    const transformedProducts = products.map(product => ({
+      ...product,
+      primaryImage: transformImageUrl(product.primaryImage),
+      additionalImages: product.additionalImages ? 
+        JSON.parse(product.additionalImages).map(transformImageUrl) : []
+    }));
+    
+    res.json(transformedProducts);
   } catch (error) {
     console.error('Products fetch error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -1282,7 +1323,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     );
 
     // Generate public URL
-    const fileUrl = `${process.env.MINIO_PUBLIC_URL || 'http://31.97.229.127:9000'}/${bucket}/${fileName}`;
+            const fileUrl = `${process.env.MINIO_PUBLIC_URL || 'https://srv943180.hstgr.cloud/minio-api'}/${bucket}/${fileName}`;
     
     res.json({ fileUrl });
   } catch (error) {

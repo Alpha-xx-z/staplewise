@@ -347,7 +347,9 @@ const CompanyDetails: React.FC = () => {
         </div>
         {!isEditing && (
           <button
-            onClick={() => setIsEditing(true)}
+            onClick={() => {
+              alert('Editing is currently unavailable. Please try again later.');
+            }}
             className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition-colors"
           >
             Edit Details

@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "env": {
-    "VITE_API_URL": "http://31.97.229.127/api"
+            "VITE_API_URL": "https://srv943180.hstgr.cloud/api"
   },
   "rewrites": [
     {

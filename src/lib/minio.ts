@@ -61,7 +61,7 @@ export async function uploadFile(
     });
     
     // Generate public URL
-    const fileUrl = `${process.env.MINIO_PUBLIC_URL || 'http://31.97.229.127:9000'}/${bucketName}/${objectName}`;
+    const fileUrl = `${process.env.MINIO_PUBLIC_URL || 'https://srv943180.hstgr.cloud/minio-api'}/${bucketName}/${objectName}`;
     return fileUrl;
   } catch (error) {
     console.error('Error uploading file to MinIO:', error);
@@ -82,7 +82,7 @@ export async function deleteFile(bucketName: string, objectName: string): Promis
 
 // Get file URL
 export function getFileUrl(bucketName: string, objectName: string): string {
-  return `${process.env.MINIO_PUBLIC_URL || 'http://31.97.229.127:9000'}/${bucketName}/${objectName}`;
+  return `${process.env.MINIO_PUBLIC_URL || 'https://srv943180.hstgr.cloud/minio-api'}/${bucketName}/${objectName}`;
 }
 
 // List files in bucket
