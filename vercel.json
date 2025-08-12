@@ -3,7 +3,10 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "env": {
-            "VITE_API_URL": "https://srv943180.hstgr.cloud/api"
+            "VITE_API_URL": "https://srv943180.hstgr.cloud/api",
+            "VITE_MINIO_PUBLIC_URL": "https://srv943180.hstgr.cloud/minio-api",
+            "VITE_MINIO_ENDPOINT": "srv943180.hstgr.cloud/minio-api",
+            "VITE_MINIO_USE_SSL": "true"
   },
   "rewrites": [
     {

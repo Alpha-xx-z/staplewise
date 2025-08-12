@@ -2,9 +2,9 @@ import { Client } from 'minio';
 
 // Initialize MinIO client
 export const minioClient = new Client({
-  endPoint: process.env.MINIO_ENDPOINT || 'localhost',
+  endPoint: import.meta.env.VITE_MINIO_ENDPOINT || process.env.MINIO_ENDPOINT || 'localhost',
   port: parseInt(process.env.MINIO_PORT || '9000'),
-  useSSL: process.env.MINIO_USE_SSL === 'true',
+  useSSL: (import.meta.env.VITE_MINIO_USE_SSL || process.env.MINIO_USE_SSL) === 'true',
   accessKey: process.env.MINIO_ACCESS_KEY || '',
   secretKey: process.env.MINIO_SECRET_KEY || '',
 });
@@ -61,7 +61,7 @@ export async function uploadFile(
     });
     
     // Generate public URL
-    const fileUrl = `${process.env.MINIO_PUBLIC_URL || 'https://srv943180.hstgr.cloud/minio-api'}/${bucketName}/${objectName}`;
+    const fileUrl = `${import.meta.env.VITE_MINIO_PUBLIC_URL || process.env.MINIO_PUBLIC_URL || 'https://srv943180.hstgr.cloud/minio-api'}/${bucketName}/${objectName}`;
     return fileUrl;
   } catch (error) {
     console.error('Error uploading file to MinIO:', error);
@@ -82,7 +82,7 @@ export async function deleteFile(bucketName: string, objectName: string): Promis
 
 // Get file URL
 export function getFileUrl(bucketName: string, objectName: string): string {
-  return `${process.env.MINIO_PUBLIC_URL || 'https://srv943180.hstgr.cloud/minio-api'}/${bucketName}/${objectName}`;
+  return `${import.meta.env.VITE_MINIO_PUBLIC_URL || process.env.MINIO_PUBLIC_URL || 'https://srv943180.hstgr.cloud/minio-api'}/${bucketName}/${objectName}`;
 }
 
 // List files in bucket
